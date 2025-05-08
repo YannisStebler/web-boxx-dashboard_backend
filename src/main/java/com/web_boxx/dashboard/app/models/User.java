@@ -1,6 +1,5 @@
 package com.web_boxx.dashboard.app.models;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +24,7 @@ public class User {
     private String phone;
 
     // Additional Information
-    private LocalDate birthday;
+    private String birthday;
     private String age;
 
     // Authentication Information

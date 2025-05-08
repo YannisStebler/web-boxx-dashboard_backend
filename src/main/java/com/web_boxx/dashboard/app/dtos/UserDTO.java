@@ -1,7 +1,6 @@
 package com.web_boxx.dashboard.app.dtos;
 
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -16,7 +15,7 @@ public class UserDTO {
     private String email;
     private String phone;
 
-    private LocalDate birthday;
+    private String birthday;
 
     private String passwordHash;
 

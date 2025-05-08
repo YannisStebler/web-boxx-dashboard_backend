@@ -1,5 +1,6 @@
 package com.web_boxx.dashboard.app.services;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -9,16 +10,12 @@ import org.springframework.stereotype.Service;
 
 import com.web_boxx.dashboard.app.models.User;
 import com.web_boxx.dashboard.app.repositories.UserRepository;
-import com.web_boxx.dashboard.app.security.JwtHelper;
 
 @Service
 public class UserService {
 
     @Autowired
     private UserRepository userRepository;
-
-    @Autowired
-    private JwtHelper jwtHelper;
 
     public List<User> getAllUsers() {
 
@@ -32,13 +29,21 @@ public class UserService {
 
     public User createUser(User user) {
 
-        user.setAge(String.valueOf(LocalDateTime.now().getYear() - user.getBirthday().getYear()));
+        user.setAge(String.valueOf(LocalDateTime.now().getYear() - LocalDate.parse(user.getBirthday()).getYear()));
         user.setEmailVerified(false);
 
         user.setRole("user");
         user.setIsActive(true);
         user.setCashierapp(false);
         user.setHelperapp(false);
+
+        user.setStripeCustomerId(null);
+        user.setSubscriptionStatus("inactive");
+
+        user.setUsagePlan("free");
+        user.setPurchaseHistory(null);
+        user.setCashierAppUserId(null);
+        user.setHelperAppUserId(null);
 
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());

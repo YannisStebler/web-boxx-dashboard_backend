@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.web_boxx.dashboard.app.models.User;
 import com.web_boxx.dashboard.app.repositories.UserRepository;
+import com.web_boxx.dashboard.app.services.UserService;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -20,6 +21,9 @@ public class AuthController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private UserService userService;
 
     @Autowired
     private JwtService jwtService;
@@ -69,15 +73,10 @@ public class AuthController {
         newUser.setLastname(request.getLastname());
         newUser.setPhone(request.getPhone());
         newUser.setEmail(request.getEmail());
+        newUser.setBirthday(request.getBirthdate());
         newUser.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        newUser.setRole("user");
 
-        newUser.setEmailVerified(false);
-        newUser.setLastLogin(LocalDateTime.now());
-        newUser.setCreatedAt(LocalDateTime.now());
-        newUser.setUpdatedAt(LocalDateTime.now());
-
-        userRepository.save(newUser);
+        userService.createUser(newUser);
 
         String token = jwtService.generateToken(newUser.getId(), newUser.getEmail(), newUser.getRole());
 
