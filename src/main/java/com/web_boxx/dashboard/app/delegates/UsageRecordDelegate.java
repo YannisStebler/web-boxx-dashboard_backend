@@ -10,11 +10,15 @@ import org.springframework.stereotype.Component;
 
 import com.web_boxx.dashboard.app.dtos.UsageRecordDTO;
 import com.web_boxx.dashboard.app.models.UsageRecord;
+import com.web_boxx.dashboard.app.security.JwtHelper;
 import com.web_boxx.dashboard.app.services.UsageRecordService;
 
 @Component
 public class UsageRecordDelegate {
     
+    @Autowired
+    private JwtHelper jwtHelper;
+
     @Autowired
     private UsageRecordService usageRecordService;
 
@@ -31,6 +35,10 @@ public class UsageRecordDelegate {
 
     public UsageRecordDTO createUsageRecord(UsageRecordDTO usageRecordDTO) {
         UsageRecord usageRecord = toEntity(usageRecordDTO);
+
+        usageRecord.setUserId(jwtHelper.getUserIdFromToken());
+        usageRecord.setTimestamp(LocalDateTime.now());
+
         UsageRecord created = usageRecordService.createUsageRecord(usageRecord);
         return toDTO(created);
     }
