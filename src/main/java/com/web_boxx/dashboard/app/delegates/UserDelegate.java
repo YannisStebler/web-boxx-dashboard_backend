@@ -66,7 +66,6 @@ public class UserDelegate {
         user.setUsagePlan(dto.getUsagePlan());
         user.setPurchaseHistory(dto.getPurchaseHistory());
 
-        // You can set additional internal fields here if needed
         return user;
     }
 

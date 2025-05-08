@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.web_boxx.dashboard.app.models.User;
 import com.web_boxx.dashboard.app.repositories.UserRepository;
+import com.web_boxx.dashboard.app.security.JwtHelper;
 
 @Service
 public class UserService {
@@ -16,11 +17,16 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private JwtHelper jwtHelper;
+
     public List<User> getAllUsers() {
+
         return userRepository.findAll();
     }
 
     public Optional<User> getUserById(String id) {
+
         return userRepository.findById(id);
     }
 

@@ -16,6 +16,6 @@ public class UsageRecord {
     private String userId;
     private String app; 
     private String action; 
-    private Integer units;
+    private String units;
     private LocalDateTime timestamp;
 }

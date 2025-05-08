@@ -36,6 +36,9 @@ public class AuthController {
             return ResponseEntity.status(401).body(Map.of("message", "Invalid username/email or password"));
         }
 
+        user.setLastLogin(LocalDateTime.now());
+        userRepository.save(user);
+
         String token = jwtService.generateToken(user.getId(), user.getEmail(), user.getRole());
 
         return ResponseEntity.ok(Map.of(
@@ -84,12 +87,6 @@ public class AuthController {
                 "role", newUser.getRole(),
                 "email", newUser.getEmail()
         ));
-    }
-
-    @PostMapping("/logout")
-    public ResponseEntity<?> logout() {
-        // Da JWT stateless ist, macht Logout hier nur auf Client-Seite Sinn
-        return ResponseEntity.ok(Map.of("message", "Successfully logged out. Please remove token on client side."));
     }
 }
 

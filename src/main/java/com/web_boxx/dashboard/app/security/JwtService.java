@@ -50,7 +50,7 @@ public class JwtService {
     }
 
     public String extractUserId(String token) {
-        return extractClaim(token, Claims::getSubject);
+        return getClaims(token).get("userId", String.class);
     }
 
     public String extractEmail(String token) {

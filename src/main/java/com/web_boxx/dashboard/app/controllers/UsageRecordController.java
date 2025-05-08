@@ -1,50 +1,70 @@
 package com.web_boxx.dashboard.app.controllers;
 
-import com.web_boxx.dashboard.app.models.UsageRecord;
-import com.web_boxx.dashboard.app.repositories.UsageRecordRepository;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.HttpStatus;
 import java.util.List;
 import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.web_boxx.dashboard.app.delegates.UsageRecordDelegate;
+import com.web_boxx.dashboard.app.dtos.UsageRecordDTO;
+import com.web_boxx.dashboard.app.security.JwtHelper;
 
 @RestController
 @RequestMapping("/api/usage-records")
 public class UsageRecordController {
 
     @Autowired
-    private UsageRecordRepository usageRecordRepository;
+    private UsageRecordDelegate usageRecordDelegate;
+
+    @Autowired
+    private JwtHelper jwtHelper;
 
     @GetMapping
-    public List<UsageRecord> getAllUsageRecords() {
-        return usageRecordRepository.findAll();
+    public ResponseEntity<List<UsageRecordDTO>> getAllUsageRecords() {
+
+        if (!jwtHelper.getRoleFromToken().toLowerCase().equals("admin")) {
+            return ResponseEntity.status(403).build();
+        }
+
+        return ResponseEntity.ok(usageRecordDelegate.getAllUsageRecords());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UsageRecord> getUsageRecordById(@PathVariable String id) {
-        Optional<UsageRecord> usageRecord = usageRecordRepository.findById(id);
+    public ResponseEntity<UsageRecordDTO> getUsageRecordById(@PathVariable String id) {
+        Optional<UsageRecordDTO> usageRecord = usageRecordDelegate.getUsageRecordById(id);
         return usageRecord.map(ResponseEntity::ok)
-                          .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+                          .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 
     @PostMapping
-    public UsageRecord createUsageRecord(@RequestBody UsageRecord usageRecord) {
-        return usageRecordRepository.save(usageRecord);
+    public UsageRecordDTO createUsageRecord(@RequestBody UsageRecordDTO usageRecord) {
+        return usageRecordDelegate.createUsageRecord(usageRecord);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UsageRecord> updateUsageRecord(@PathVariable String id, @RequestBody UsageRecord usageRecordDetails) {
-        Optional<UsageRecord> optionalUsageRecord = usageRecordRepository.findById(id);
+    public ResponseEntity<UsageRecordDTO> updateUsageRecord(@PathVariable String id, @RequestBody UsageRecordDTO usageRecordDetails) {
+
+        if (!jwtHelper.getRoleFromToken().toLowerCase().equals("admin")) {
+            return ResponseEntity.status(403).build();
+        }
+
+        Optional<UsageRecordDTO> optionalUsageRecord = usageRecordDelegate.getUsageRecordById(id);
         if (optionalUsageRecord.isPresent()) {
-            UsageRecord usageRecord = optionalUsageRecord.get();
-            usageRecord.setUserId(usageRecordDetails.getUserId());
+            UsageRecordDTO usageRecord = optionalUsageRecord.get();
             usageRecord.setApp(usageRecordDetails.getApp());
             usageRecord.setAction(usageRecordDetails.getAction());
             usageRecord.setUnits(usageRecordDetails.getUnits());
-            usageRecord.setTimestamp(usageRecordDetails.getTimestamp());
-            return ResponseEntity.ok(usageRecordRepository.save(usageRecord));
+            return ResponseEntity.ok(usageRecordDelegate.updateUsageRecord(id, usageRecord));
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
@@ -52,8 +72,13 @@ public class UsageRecordController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUsageRecord(@PathVariable String id) {
-        if (usageRecordRepository.existsById(id)) {
-            usageRecordRepository.deleteById(id);
+
+        if (!jwtHelper.getRoleFromToken().toLowerCase().equals("admin")) {
+            return ResponseEntity.status(403).build();
+        }
+
+        if (usageRecordDelegate.getUsageRecordById(id).isPresent()) {
+            usageRecordDelegate.deleteUsageRecord(id);
             return ResponseEntity.noContent().build();
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
