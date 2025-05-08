@@ -1,23 +1,31 @@
 package com.web_boxx.dashboard.app.stripe;
 
-import com.stripe.exception.SignatureVerificationException;
-import com.stripe.exception.StripeException;
-import com.stripe.model.checkout.Session;
-import com.stripe.net.Webhook;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Scanner;
 
-import com.web_boxx.dashboard.app.models.User;
-import com.web_boxx.dashboard.app.repositories.UserRepository;
-import com.stripe.model.Event;
+import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
-import java.util.*;
+import com.stripe.exception.SignatureVerificationException;
+import com.stripe.exception.StripeException;
+import com.stripe.model.Event;
+import com.stripe.model.checkout.Session;
+import com.stripe.net.Webhook;
+import com.web_boxx.dashboard.app.models.User;
+import com.web_boxx.dashboard.app.repositories.UserRepository;
+import com.web_boxx.dashboard.app.security.JwtHelper;
 
 @RestController
 @RequestMapping("/api/payment")
@@ -26,20 +34,23 @@ public class StripeController {
     @Value("${stripe.webhook.secret}")
     private String endpointSecret;
 
-    private final StripeService stripeService;
-    private final UserRepository userRepository;
+    @Autowired
+    private StripeService stripeService;
 
     @Autowired
-    public StripeController(StripeService stripeService, UserRepository userRepository) {
-        this.stripeService = stripeService;
-        this.userRepository = userRepository;
-    }
+    private UserRepository userRepository;
+
+    @Autowired
+    private JwtHelper jwtHelper;
 
     // 🟢 1. Checkout-Session erstellen
     @PostMapping("/create-checkout-session")
-    public ResponseEntity<Map<String, String>> createCheckoutSession(@RequestBody PaymentRequest request) {
+    public ResponseEntity<Map<String, String>> createCheckoutSession() {
+        String userId = jwtHelper.getUserIdFromToken();
+        Long amount = stripeService.calculatePricingAmount();
+
         try {
-            Optional<User> optionalUser = userRepository.findById(request.getUserId());
+            Optional<User> optionalUser = userRepository.findById(userId);
             if (optionalUser.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "User not found"));
             }
@@ -58,11 +69,11 @@ public class StripeController {
             }
 
             // Stripe Checkout-Session erstellen
-            Session session = stripeService.createCheckoutSession(stripeCustomerId, request.getAmount());
+            Session session = stripeService.createCheckoutSession(stripeCustomerId, amount);
 
             // Kaufvorgang speichern
             Map<String, String> purchase = new HashMap<>();
-            purchase.put("amount", String.valueOf(request.getAmount()));
+            purchase.put("amount", String.valueOf(amount));
             purchase.put("status", "pending");
             purchase.put("url", session.getUrl());
 

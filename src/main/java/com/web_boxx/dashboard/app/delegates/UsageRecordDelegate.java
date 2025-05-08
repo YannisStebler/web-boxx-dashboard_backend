@@ -55,7 +55,7 @@ public class UsageRecordDelegate {
         usageRecord.setId(dto.getId());
         usageRecord.setApp(dto.getApp());
         usageRecord.setAction(dto.getAction());
-        usageRecord.setUnits(dto.getUnits());
+        usageRecord.setPrice(dto.getPrice());
 
         return usageRecord;
     }
@@ -68,7 +68,7 @@ public class UsageRecordDelegate {
         dto.setId(usageRecord.getId());
         dto.setApp(usageRecord.getApp());
         dto.setAction(usageRecord.getAction());
-        dto.setUnits(usageRecord.getUnits());
+        dto.setPrice(usageRecord.getPrice());
 
         return dto;
     }

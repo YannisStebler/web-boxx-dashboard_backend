@@ -1,5 +1,8 @@
 package com.web_boxx.dashboard.app.stripe;
 
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -7,12 +10,21 @@ import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.checkout.Session;
 import com.stripe.param.checkout.SessionCreateParams;
+import com.web_boxx.dashboard.app.models.UsageRecord;
+import com.web_boxx.dashboard.app.repositories.UsageRecordRepository;
+import com.web_boxx.dashboard.app.security.JwtHelper;
 
 @Service
 public class StripeService {
 
     @Value("${stripe.api.key}")
     private String stripeApiKey;
+
+    @Autowired
+    private JwtHelper jwtHelper;
+
+    @Autowired
+    private UsageRecordRepository usageRecordRepository;
 
     public Session createCheckoutSession(String stripeCustomerId, long amountInCents) throws StripeException {
         Stripe.apiKey = stripeApiKey;
@@ -40,7 +52,23 @@ public class StripeService {
             )
             .build();
     
-        return Session.create(params); // gib die ganze Session zurück
+        return Session.create(params);
     }
-    
+
+    public Long calculatePricingAmount() {
+
+        Long base = 1495L; // 14,95 Fr in Cent
+
+        String userId = jwtHelper.getUserIdFromToken(); 
+        List<UsageRecord> usageRecords = usageRecordRepository.findByUserId(userId);
+
+        Long totalAmount = base;
+        if (usageRecords != null && !usageRecords.isEmpty()) {
+            for (UsageRecord record : usageRecords) {
+            totalAmount += record.getPrice() != null ? Long.parseLong(record.getPrice()) : 0L;
+            }
+        }
+        return totalAmount;
+    }
+        
 }

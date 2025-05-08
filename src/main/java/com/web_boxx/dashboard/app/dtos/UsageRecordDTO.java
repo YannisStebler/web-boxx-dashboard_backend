@@ -8,5 +8,5 @@ public class UsageRecordDTO {
     
     private String app; 
     private String action; 
-    private String units;
+    private String price;
 }

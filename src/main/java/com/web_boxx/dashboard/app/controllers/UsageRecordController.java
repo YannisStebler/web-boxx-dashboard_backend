@@ -63,7 +63,7 @@ public class UsageRecordController {
             UsageRecordDTO usageRecord = optionalUsageRecord.get();
             usageRecord.setApp(usageRecordDetails.getApp());
             usageRecord.setAction(usageRecordDetails.getAction());
-            usageRecord.setUnits(usageRecordDetails.getUnits());
+            usageRecord.setPrice(usageRecordDetails.getPrice());
             return ResponseEntity.ok(usageRecordDelegate.updateUsageRecord(id, usageRecord));
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
