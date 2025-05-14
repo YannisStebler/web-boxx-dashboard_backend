@@ -43,6 +43,7 @@ public class User {
     // Stripe Information
     private String stripeCustomerId;
     private String subscriptionStatus;
+    private Map<String, String> subscriptionItemIds;
 
     // Usage Plan & Purchase Tracking
     private String usagePlan;
