@@ -32,16 +32,10 @@ public class StripeSubscriptionService {
     private final JwtHelper jwtHelper;
     private final UserRepository userRepository;
     private final RestTemplate restTemplate = new RestTemplate();
+    private final SubscriptionService subscriptionService;
 
     @Value("${stripe.api.key}")
     private String stripeApiKey;
-
-    // Produktpreis-IDs aus Stripe-Dashboard (pricing table)
-    private static final Map<String, String> USAGE_PRICES = Map.of(
-            "orders", "price_1RMTZ04KBUHdcnup1M0qUxea",
-            "products", "price_1RMTZ04KBUHdcnupVMgg7MIi",
-            "base", "price_1RMTZ04KBUHdcnupJLj8NCIO"
-    );
 
     public String createSubscriptionCheckoutSession() throws StripeException {
         Stripe.apiKey = stripeApiKey;
@@ -56,17 +50,17 @@ public class StripeSubscriptionService {
                 .setCancelUrl("http://localhost:4200/cancel")
                 .addLineItem(
                         SessionCreateParams.LineItem.builder()
-                                .setPrice("price_1RNVmw4KBUHdcnupwkp93kZ7") // Pauschalpreis (monatlich)
+                                .setPrice("price_1ROdf0KcxI7Mq20Dz4t2Vvf6") // Pauschalpreis (monatlich)
                                 .build()
                 )
                 .addLineItem(
                         SessionCreateParams.LineItem.builder()
-                                .setPrice("price_1RMTZ04KBUHdcnupVMgg7MIi") // createdProducts (nutzungsbasiert)
+                                .setPrice("price_1ROdf0KcxI7Mq20Da5ATJYxq") // createdProducts (nutzungsbasiert)
                                 .build()
                 )
                 .addLineItem(
                         SessionCreateParams.LineItem.builder()
-                                .setPrice("price_1RMTZ04KBUHdcnup1M0qUxea") // completedOrders (nutzungsbasiert)
+                                .setPrice("price_1ROdf0KcxI7Mq20DyHT3aEgS") // completedOrders (nutzungsbasiert)
                                 .build()
                 )
                 .build();
@@ -120,7 +114,6 @@ public class StripeSubscriptionService {
         body.put("event_name", eventName);
         body.put("payload", payload);
 
-        // 👇 timestamp im RFC 3339 Format
         String timestamp = ZonedDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
         body.put("timestamp", timestamp);
 
@@ -141,7 +134,6 @@ public class StripeSubscriptionService {
         String userId = jwtHelper.getUserIdFromToken();
         User user = userRepository.findById(userId).orElseThrow();
 
-        // Optional: Du kannst auch die ID speichern, wenn du sie hast
         List<Subscription> subscriptions = Subscription.list(
                 Map.of("customer", user.getStripeCustomerId(), "status", "active")
         ).getData();
@@ -150,12 +142,17 @@ public class StripeSubscriptionService {
             return "Keine aktive Subscription gefunden.";
         }
 
-        Subscription sub = subscriptions.get(0); // Annahme: 1 aktive Sub pro User
-        sub.cancel();
+        Subscription sub = subscriptions.get(0); 
 
-        user.setSubscriptionStatus("cancelled");
-        userRepository.save(user);
+        Map<String, Object> cancelParams = new HashMap<>();
+        cancelParams.put("invoice_now", true);
+        cancelParams.put("prorate", false);
 
-        return "Subscription wurde gekündigt: " + sub.getId();
+        sub.cancel(cancelParams);
+
+        subscriptionService.cancelSubscription();
+
+        return "Subscription wurde sofort gekündigt und finale Rechnung gestellt.";
     }
+
 }

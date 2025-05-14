@@ -39,9 +39,8 @@ public class SubscriptionService {
     @Autowired
     private RestTemplate restTemplate;
 
-    public String createSubscription() {
-        String userId = jwtHelper.getUserIdFromToken();
-        Optional<User> optionalUser = userRepository.findById(userId);
+    public String createSubscription(String stripeCustomerId) {
+        Optional<User> optionalUser = userRepository.findByStripeCustomerId(stripeCustomerId);
 
         if (optionalUser.isEmpty()) {
             return "User not found.";
@@ -49,7 +48,6 @@ public class SubscriptionService {
 
         User user = optionalUser.get();
 
-        // Prepare request to cashier API
         String cashierRegisterUrl = "https://api.quikcashier.com/api/auth/register";
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -83,7 +81,7 @@ public class SubscriptionService {
             }
 
         } catch (Exception e) {
-            return "Subscription failed: Unable to register in Cashier app.";
+            return "Subscription failed: Unable to register in Cashier app. Please click on the link to register manually or contact support.";
         }
     }
 
@@ -95,6 +93,7 @@ public class SubscriptionService {
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
             user.setSubscriptionStatus("cancelled");
+            user.setUsagePlan("free");
             user.setUpdatedAt(LocalDateTime.now());
 
             userRepository.save(user);
@@ -126,7 +125,6 @@ public class SubscriptionService {
 
         List<UsageRecord> records = usageRecordRepository.findByUserId(userId);
 
-        // Gruppieren und Summieren
         Map<String, Double> grouped = records.stream()
                 .collect(Collectors.groupingBy(
                         record -> record.getApp() + "|" + record.getAction(),
@@ -134,12 +132,11 @@ public class SubscriptionService {
                             try {
                                 return Double.parseDouble(record.getPrice());
                             } catch (NumberFormatException e) {
-                                return 0.0; // Alternativ: Loggen
+                                return 0.0;
                             }
                         })
                 ));
 
-        // Map in Liste von DTOs umwandeln
         List<UsageSummaryDTO> result = new ArrayList<>();
         for (Map.Entry<String, Double> entry : grouped.entrySet()) {
             String[] parts = entry.getKey().split("\\|");

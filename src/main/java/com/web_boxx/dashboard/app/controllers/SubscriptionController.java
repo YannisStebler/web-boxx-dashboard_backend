@@ -10,8 +10,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.stripe.model.Event;
+import com.stripe.model.Subscription;
 import com.stripe.net.Webhook;
 import com.web_boxx.dashboard.app.services.StripeSubscriptionService;
+import com.web_boxx.dashboard.app.services.SubscriptionService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,6 +23,8 @@ import lombok.RequiredArgsConstructor;
 public class SubscriptionController {
 
     private final StripeSubscriptionService stripeSubscriptionService;
+
+    private final SubscriptionService subscriptionService;
 
     @Value("${stripe.webhook.secret}")
     private String endpointSecret;
@@ -61,7 +65,11 @@ public class SubscriptionController {
             Event event = Webhook.constructEvent(payload, sigHeader, endpointSecret);
 
             if ("customer.subscription.created".equalsIgnoreCase(event.getType())) {
-                System.out.println("Made event: " + event.getType());
+                Subscription subscription = (Subscription) event.getData().getObject();
+                System.out.println("Made event: " + event.getType() + " - Customer ID: " + subscription.getCustomer());
+
+                stripeSubscriptionService.reportBasePrice(subscription.getCustomer());
+                subscriptionService.createSubscription(subscription.getCustomer());
             }
 
             return ResponseEntity.ok().build();
